@@ -6,6 +6,9 @@ import com.mindset.usuarios.repository.UsuarioRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
+import java.util.List;
+import java.util.NoSuchElementException;
+
 @Service
 public class UsuarioService {
 
@@ -18,17 +21,7 @@ public class UsuarioService {
 
     public Usuario registrarEstudiante(Usuario usuario) {
 
-        if (usuario == null) {
-            throw new IllegalArgumentException("Los datos del usuario son obligatorios");
-        }
-
-        if (usuario.getCorreo() == null || usuario.getCorreo().isBlank()) {
-            throw new IllegalArgumentException("El correo es obligatorio");
-        }
-
-        if (usuario.getContrasena() == null || usuario.getContrasena().isBlank()) {
-            throw new IllegalArgumentException("La contraseña es obligatoria");
-        }
+        validarDatos(usuario);
 
         String correo = usuario.getCorreo().trim().toLowerCase();
 
@@ -41,5 +34,61 @@ public class UsuarioService {
         usuario.setRol("ESTUDIANTE");
 
         return usuarioRepository.save(usuario);
+    }
+
+    public List<Usuario> listarUsuarios() {
+        return usuarioRepository.findAll();
+    }
+
+    public Usuario buscarPorId(Long id) {
+
+        Usuario usuario = usuarioRepository.findById(id).orElse(null);
+
+        if (usuario == null) {
+            throw new NoSuchElementException("Usuario no encontrado");
+        }
+
+        return usuario;
+    }
+
+    public Usuario actualizarUsuario(Long id, Usuario datos) {
+
+        Usuario usuario = buscarPorId(id);
+
+        validarDatos(datos);
+
+        String correo = datos.getCorreo().trim().toLowerCase();
+        Usuario existente = usuarioRepository.findByCorreo(correo);
+
+        if (existente != null && !existente.getId().equals(id)) {
+            throw new IllegalStateException("El correo ya está registrado");
+        }
+
+        usuario.setCorreo(correo);
+        usuario.setContrasena(codificador.encode(datos.getContrasena()));
+
+        return usuarioRepository.save(usuario);
+    }
+
+    public void eliminarUsuario(Long id) {
+
+        Usuario usuario = buscarPorId(id);
+
+        usuarioRepository.delete(usuario);
+    }
+
+    private void validarDatos(Usuario usuario) {
+
+        if (usuario == null) {
+            throw new IllegalArgumentException("Los datos del usuario son obligatorios");
+        }
+
+        if (usuario.getCorreo() == null || usuario.getCorreo().isBlank()) {
+            throw new IllegalArgumentException("El correo es obligatorio");
+        }
+
+        if (usuario.getContrasena() == null || usuario.getContrasena().isBlank()) {
+            throw new IllegalArgumentException("La contraseña es obligatoria");
+        }
     }
 }
