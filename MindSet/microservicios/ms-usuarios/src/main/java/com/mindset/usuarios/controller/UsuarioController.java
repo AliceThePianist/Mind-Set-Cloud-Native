@@ -6,6 +6,7 @@ import com.mindset.usuarios.service.UsuarioService;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.ArrayList;
@@ -13,6 +14,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
+
+import org.springframework.security.core.Authentication;
 
 @RestController
 @RequestMapping("/api/usuarios")
@@ -33,6 +36,56 @@ public class UsuarioController {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(datosUsuario(registrado));
     }
+
+    @PostMapping("/login")
+    public ResponseEntity<Map<String, String>> iniciarSesion(
+            @RequestBody Map<String, String> datos) {
+
+        String token = usuarioService.iniciarSesion(
+                datos.get("correo"),
+                datos.get("contrasena")
+        );
+
+        Map<String, String> respuesta = new HashMap<>();
+        respuesta.put("token", token);
+        respuesta.put("tipo", "Bearer");
+
+        return ResponseEntity.ok(respuesta);
+    }
+
+
+    @GetMapping("/mi-cuenta")
+    public Map<String, Object> consultarMiCuenta(Authentication autenticacion) {
+
+        Usuario usuario = usuarioService.buscarPorCorreo(autenticacion.getName());
+
+        return datosUsuario(usuario);
+    }
+
+    @PutMapping("/mi-cuenta")
+    public Map<String, Object> actualizarMiCuenta(
+            Authentication autenticacion,
+            @RequestBody Usuario datos) {
+
+        Usuario usuario = usuarioService.buscarPorCorreo(autenticacion.getName());
+
+        Usuario actualizado = usuarioService.actualizarUsuario(
+                usuario.getId(), datos
+        );
+
+        return datosUsuario(actualizado);
+    }
+
+    @DeleteMapping("/mi-cuenta")
+    public ResponseEntity<Void> eliminarMiCuenta(Authentication autenticacion) {
+
+        Usuario usuario = usuarioService.buscarPorCorreo(autenticacion.getName());
+
+        usuarioService.eliminarUsuario(usuario.getId());
+
+        return ResponseEntity.noContent().build();
+    }
+
 
     @GetMapping
     public List<Map<String, Object>> listarUsuarios() {
@@ -81,6 +134,14 @@ public class UsuarioController {
         respuesta.put("rol", usuario.getRol());
 
         return respuesta;
+    }
+
+    @ExceptionHandler(BadCredentialsException.class)
+    public ResponseEntity<Map<String, String>> errorCredenciales(
+            BadCredentialsException e) {
+
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                .body(mensaje("Credenciales incorrectas"));
     }
 
     @ExceptionHandler(IllegalArgumentException.class)

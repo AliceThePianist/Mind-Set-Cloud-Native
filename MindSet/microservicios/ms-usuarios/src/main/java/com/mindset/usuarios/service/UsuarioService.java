@@ -3,8 +3,11 @@ package com.mindset.usuarios.service;
 
 import com.mindset.usuarios.model.Usuario;
 import com.mindset.usuarios.repository.UsuarioRepository;
+import com.mindset.usuarios.security.JwtService;
+
 import org.springframework.stereotype.Service;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.authentication.BadCredentialsException;
 
 import java.util.List;
 import java.util.NoSuchElementException;
@@ -13,10 +16,13 @@ import java.util.NoSuchElementException;
 public class UsuarioService {
 
     private final UsuarioRepository usuarioRepository;
+    private final JwtService jwtService;
     private final BCryptPasswordEncoder codificador = new BCryptPasswordEncoder();
 
-    public UsuarioService(UsuarioRepository usuarioRepository) {
+    public UsuarioService(UsuarioRepository usuarioRepository,
+                          JwtService jwtService) {
         this.usuarioRepository = usuarioRepository;
+        this.jwtService = jwtService;
     }
 
     public Usuario registrarEstudiante(Usuario usuario) {
@@ -36,6 +42,28 @@ public class UsuarioService {
         return usuarioRepository.save(usuario);
     }
 
+    public String iniciarSesion(String correo, String contrasena) {
+
+        if (correo == null || correo.isBlank()
+                || contrasena == null || contrasena.isBlank()) {
+            throw new BadCredentialsException("Credenciales incorrectas");
+        }
+
+        String correoNormalizado = correo.trim().toLowerCase();
+
+        Usuario usuario = usuarioRepository.findByCorreo(correoNormalizado);
+
+        if (usuario == null) {
+            throw new BadCredentialsException("Credenciales incorrectas");
+        }
+
+        if (!codificador.matches(contrasena, usuario.getContrasena())) {
+            throw new BadCredentialsException("Credenciales incorrectas");
+        }
+
+        return jwtService.generarToken(usuario);
+    }
+
     public List<Usuario> listarUsuarios() {
         return usuarioRepository.findAll();
     }
@@ -50,6 +78,19 @@ public class UsuarioService {
 
         return usuario;
     }
+
+
+    public Usuario buscarPorCorreo(String correo) {
+
+        Usuario usuario = usuarioRepository.findByCorreo(correo);
+
+        if (usuario == null) {
+            throw new NoSuchElementException("Usuario no encontrado");
+        }
+
+        return usuario;
+    }
+
 
     public Usuario actualizarUsuario(Long id, Usuario datos) {
 
