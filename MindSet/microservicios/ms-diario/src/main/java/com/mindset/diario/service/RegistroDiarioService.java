@@ -4,10 +4,13 @@ package com.mindset.diario.service;
 import com.mindset.diario.model.RegistroDiario;
 import com.mindset.diario.repository.RegistroDiarioRepository;
 
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.NoSuchElementException;
 
 @Service
@@ -19,27 +22,21 @@ public class RegistroDiarioService {
         this.registroDiarioRepository = registroDiarioRepository;
     }
 
-    public RegistroDiario registrarEmocion(RegistroDiario datos) {
+    public RegistroDiario registrarEmocion(Long usuarioId, RegistroDiario datos) {
 
+        validarUsuarioId(usuarioId);
         validarDatos(datos);
-
-        if (datos.getUsuarioId() == null || datos.getUsuarioId() <= 0) {
-            throw new IllegalArgumentException("El ID del estudiante es obligatorio");
-        }
 
         LocalDate fechaActual = LocalDate.now();
 
-        if (registroDiarioRepository.existsByUsuarioIdAndFecha(
-                datos.getUsuarioId(), fechaActual)) {
-
+        if (registroDiarioRepository.existsByUsuarioIdAndFecha(usuarioId, fechaActual)) {
             throw new IllegalStateException(
                     "El estudiante ya tiene un registro emocional para hoy"
             );
         }
 
         RegistroDiario registro = new RegistroDiario();
-
-        registro.setUsuarioId(datos.getUsuarioId());
+        registro.setUsuarioId(usuarioId);
         registro.setFecha(fechaActual);
         registro.setEstadoEmocional(datos.getEstadoEmocional());
         registro.setComentario(datos.getComentario());
@@ -47,29 +44,37 @@ public class RegistroDiarioService {
         return registroDiarioRepository.save(registro);
     }
 
-    public List<RegistroDiario> listarRegistros() {
-        return registroDiarioRepository.findAll();
+    public List<RegistroDiario> listarRegistros(Long usuarioId) {
+        validarUsuarioId(usuarioId);
+        return registroDiarioRepository.findByUsuarioIdOrderByFechaDesc(usuarioId);
     }
 
-    public RegistroDiario buscarPorId(Long id) {
+    public RegistroDiario buscarPorId(Long id, Long usuarioId) {
 
-        RegistroDiario registro = registroDiarioRepository.findById(id).orElse(null);
+        validarUsuarioId(usuarioId);
 
-        if (registro == null) {
-            throw new NoSuchElementException("Registro emocional no encontrado");
+        RegistroDiario registro = registroDiarioRepository.findById(id)
+                .orElseThrow(() ->
+                        new NoSuchElementException("Registro emocional no encontrado")
+                );
+
+        if (!registro.getUsuarioId().equals(usuarioId)) {
+            throw new AccessDeniedException(
+                    "No tienes permiso para acceder a este registro"
+            );
         }
 
         return registro;
     }
 
     public List<RegistroDiario> obtenerHistorial(Long usuarioId) {
-
-        return registroDiarioRepository.findByUsuarioIdOrderByFechaDesc(usuarioId);
+        return listarRegistros(usuarioId);
     }
 
-    public RegistroDiario actualizarRegistro(Long id, RegistroDiario datos) {
+    public RegistroDiario actualizarRegistro(
+            Long id, Long usuarioId, RegistroDiario datos) {
 
-        RegistroDiario registro = buscarPorId(id);
+        RegistroDiario registro = buscarPorId(id, usuarioId);
 
         validarDatos(datos);
 
@@ -79,17 +84,67 @@ public class RegistroDiarioService {
         return registroDiarioRepository.save(registro);
     }
 
-    public void eliminarRegistro(Long id) {
+    public void eliminarRegistro(Long id, Long usuarioId) {
 
-        RegistroDiario registro = buscarPorId(id);
-
+        RegistroDiario registro = buscarPorId(id, usuarioId);
         registroDiarioRepository.delete(registro);
+    }
+
+    public Map<String, Object> obtenerResumenSieteDias(Long usuarioId) {
+
+        validarUsuarioId(usuarioId);
+
+        LocalDate hoy = LocalDate.now();
+        LocalDate desde = hoy.minusDays(6);
+
+        List<RegistroDiario> historial =
+                registroDiarioRepository.findByUsuarioIdOrderByFechaDesc(usuarioId);
+
+        int totalRegistros = 0;
+        int sumaEmociones = 0;
+
+        for (RegistroDiario registro : historial) {
+
+            if (!registro.getFecha().isBefore(desde)
+                    && !registro.getFecha().isAfter(hoy)) {
+
+                totalRegistros++;
+                sumaEmociones += registro.getEstadoEmocional();
+            }
+        }
+
+        double promedio = 0.0;
+
+        if (totalRegistros > 0) {
+            promedio = (double) sumaEmociones / totalRegistros;
+        }
+
+        Map<String, Object> resumen = new HashMap<>();
+
+        resumen.put("usuarioId", usuarioId);
+        resumen.put("fechaInicio", desde);
+        resumen.put("fechaFin", hoy);
+        resumen.put("totalRegistros", totalRegistros);
+        resumen.put("promedioEmocional", promedio);
+
+        return resumen;
+    }
+
+    private void validarUsuarioId(Long usuarioId) {
+
+        if (usuarioId == null || usuarioId <= 0) {
+            throw new IllegalArgumentException(
+                    "El ID del estudiante es obligatorio"
+            );
+        }
     }
 
     private void validarDatos(RegistroDiario datos) {
 
         if (datos == null) {
-            throw new IllegalArgumentException("Los datos del registro son obligatorios");
+            throw new IllegalArgumentException(
+                    "Los datos del registro son obligatorios"
+            );
         }
 
         if (datos.getEstadoEmocional() == null
