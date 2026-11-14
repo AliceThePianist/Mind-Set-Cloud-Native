@@ -3,6 +3,8 @@ package com.mindset.usuarios.security;
 
 import com.mindset.usuarios.model.Usuario;
 import com.mindset.usuarios.repository.UsuarioRepository;
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.JwtException;
 
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -44,13 +46,17 @@ public class JwtFilter extends OncePerRequestFilter {
 
             String token = autorizacion.substring(7).trim();
 
-            if (jwtService.validarToken(token)) {
+            try {
+                Claims datos = jwtService.obtenerDatos(token);
+                Long usuarioId = datos.get("usuarioId", Long.class);
+                String correo = datos.getSubject();
+                if (usuarioId == null || usuarioId <= 0 || correo == null || datos.getExpiration() == null) {
+                    response.sendError(401);
+                    return;
+                }
+                Usuario usuario = usuarioRepository.findById(usuarioId).orElse(null);
 
-                String correo = jwtService.obtenerCorreo(token);
-
-                Usuario usuario = usuarioRepository.findByCorreo(correo);
-
-                if (usuario != null
+                if (usuario != null && correo.equals(usuario.getCorreo())
                         && SecurityContextHolder.getContext().getAuthentication() == null) {
 
                     SimpleGrantedAuthority permiso =
@@ -66,6 +72,10 @@ public class JwtFilter extends OncePerRequestFilter {
                     SecurityContextHolder.getContext()
                             .setAuthentication(autenticacion);
                 }
+            } catch (JwtException | IllegalArgumentException e) {
+                SecurityContextHolder.clearContext();
+                response.sendError(401);
+                return;
             }
         }
 

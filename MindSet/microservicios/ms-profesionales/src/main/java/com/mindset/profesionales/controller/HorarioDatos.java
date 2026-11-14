@@ -7,5 +7,10 @@ public record HorarioDatos(Long id, Long profesionalId, Instant inicio, Instant 
         return new HorarioDatos(horario.getId(), horario.getProfesional().getUsuarioId(),
                 horario.getInicio(), horario.getFin(), horario.getSolicitudId() != null);
     }
-    public record Entrada(Instant inicio, Instant fin) {}
+    public record Entrada(Instant inicio, Instant fin) {
+        public Entrada {
+            if (inicio != null) inicio = inicio.truncatedTo(java.time.temporal.ChronoUnit.MICROS);
+            if (fin != null) fin = fin.truncatedTo(java.time.temporal.ChronoUnit.MICROS);
+        }
+    }
 }

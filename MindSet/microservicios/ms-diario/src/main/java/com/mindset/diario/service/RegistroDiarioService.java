@@ -27,7 +27,7 @@ public class RegistroDiarioService {
         validarUsuarioId(usuarioId);
         validarDatos(datos);
 
-        LocalDate fechaActual = LocalDate.now();
+        LocalDate fechaActual = LocalDate.now(java.time.ZoneId.of("America/Santiago"));
 
         if (registroDiarioRepository.existsByUsuarioIdAndFecha(usuarioId, fechaActual)) {
             throw new IllegalStateException(
@@ -94,7 +94,7 @@ public class RegistroDiarioService {
 
         validarUsuarioId(usuarioId);
 
-        LocalDate hoy = LocalDate.now();
+        LocalDate hoy = LocalDate.now(java.time.ZoneId.of("America/Santiago"));
         LocalDate desde = hoy.minusDays(6);
 
         List<RegistroDiario> historial =
