@@ -53,7 +53,11 @@ El diagrama editable y su imagen exportada se encuentran en la carpeta `MindSet/
 
 ## Estado del proyecto
 
-La primera etapa corresponde al análisis de requerimientos y al diseño de la arquitectura de microservicios. La implementación en Java y Spring Boot se realizará durante las siguientes etapas del proyecto.
+Los cuatro microservicios cuentan con implementación REST, persistencia PostgreSQL y protección por roles y propietario. Usuarios permite el alta administrativa de profesionales; Profesionales administra perfiles, horarios y reservas; Citas conserva solicitudes y estados. Diario mantiene el registro personal y el resumen informativo semanal.
+
+La asignación dispone de un adaptador REST local provisional, desactivado por defecto. El procesamiento asíncrono, las notificaciones y la infraestructura descrita en la arquitectura propuesta todavía no están implementados. Las pruebas funcionales con Postman y la integración completa están pendientes.
+
+Consulta la [guía de desarrollo local y contratos](MindSet/documentos/Desarrollo_local.md) para configurar los servicios, conocer los endpoints, las garantías de concurrencia y las verificaciones realizadas. La rama acumulativa de este desarrollo es `features/citas`; no se ha integrado en `main`.
 
 ## Autor
 
