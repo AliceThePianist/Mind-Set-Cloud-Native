@@ -126,6 +126,7 @@ public class RegistroDiarioService {
         resumen.put("fechaFin", hoy);
         resumen.put("totalRegistros", totalRegistros);
         resumen.put("promedioEmocional", promedio);
+        resumen.put("aviso", "Resumen informativo; no constituye un diagnóstico clínico");
 
         return resumen;
     }

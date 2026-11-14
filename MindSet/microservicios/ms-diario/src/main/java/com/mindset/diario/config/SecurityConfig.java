@@ -36,7 +36,7 @@ public class SecurityConfig {
                         .requestMatchers(
                                 "/api/diario/registros",
                                 "/api/diario/registros/**"
-                        ).authenticated()
+                        ).hasRole("ESTUDIANTE")
 
                         .requestMatchers("/error").permitAll()
 

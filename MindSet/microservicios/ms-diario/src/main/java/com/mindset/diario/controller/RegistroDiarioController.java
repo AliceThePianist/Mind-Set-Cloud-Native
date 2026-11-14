@@ -122,6 +122,12 @@ public class RegistroDiarioController {
                 .body(mensaje(e.getMessage()));
     }
 
+    @ExceptionHandler(org.springframework.dao.DataIntegrityViolationException.class)
+    public ResponseEntity<Map<String, String>> errorPersistencia() {
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+                .body(mensaje("Ya existe un registro para este estudiante y fecha"));
+    }
+
     @ExceptionHandler(NoSuchElementException.class)
     public ResponseEntity<Map<String, String>> errorNoEncontrado(
             NoSuchElementException e) {
