@@ -37,6 +37,12 @@ public class UsuarioController {
                 .body(datosUsuario(registrado));
     }
 
+    @PostMapping("/profesionales")
+    public ResponseEntity<Map<String, Object>> registrarProfesional(@RequestBody Usuario usuario) {
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(datosUsuario(usuarioService.registrarProfesional(usuario)));
+    }
+
     @PostMapping("/login")
     public ResponseEntity<Map<String, String>> iniciarSesion(
             @RequestBody Map<String, String> datos) {
@@ -158,6 +164,11 @@ public class UsuarioController {
 
         return ResponseEntity.status(HttpStatus.CONFLICT)
                 .body(mensaje(e.getMessage()));
+    }
+
+    @ExceptionHandler(org.springframework.dao.DataIntegrityViolationException.class)
+    public ResponseEntity<Map<String, String>> errorPersistencia() {
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(mensaje("El correo ya está registrado"));
     }
 
     @ExceptionHandler(NoSuchElementException.class)

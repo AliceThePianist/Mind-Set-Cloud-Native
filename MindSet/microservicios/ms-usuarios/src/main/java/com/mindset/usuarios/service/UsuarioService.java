@@ -26,6 +26,14 @@ public class UsuarioService {
     }
 
     public Usuario registrarEstudiante(Usuario usuario) {
+        return registrarUsuario(usuario, "ESTUDIANTE");
+    }
+
+    public Usuario registrarProfesional(Usuario usuario) {
+        return registrarUsuario(usuario, "PROFESIONAL");
+    }
+
+    private Usuario registrarUsuario(Usuario usuario, String rol) {
 
         validarDatos(usuario);
 
@@ -37,7 +45,7 @@ public class UsuarioService {
 
         usuario.setCorreo(correo);
         usuario.setContrasena(codificador.encode(usuario.getContrasena()));
-        usuario.setRol("ESTUDIANTE");
+        usuario.setRol(rol);
 
         return usuarioRepository.save(usuario);
     }
@@ -130,6 +138,13 @@ public class UsuarioService {
 
         if (usuario.getContrasena() == null || usuario.getContrasena().isBlank()) {
             throw new IllegalArgumentException("La contraseña es obligatoria");
+        }
+        if (!usuario.getCorreo().trim().matches("^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$")
+                || usuario.getCorreo().trim().length() > 255) {
+            throw new IllegalArgumentException("El correo no tiene un formato válido");
+        }
+        if (usuario.getContrasena().getBytes(java.nio.charset.StandardCharsets.UTF_8).length > 72) {
+            throw new IllegalArgumentException("La contraseña no puede superar 72 bytes UTF-8");
         }
     }
 }
