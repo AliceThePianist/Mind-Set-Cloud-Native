@@ -31,4 +31,3 @@ public class ServicioInternoFilter extends OncePerRequestFilter {
         chain.doFilter(request, response);
     }
 }
-
