@@ -59,6 +59,8 @@ La asignación dispone de un adaptador REST local provisional, desactivado por d
 
 Consulta la [guía de desarrollo local y contratos](MindSet/documentos/Desarrollo_local.md) para configurar los servicios, conocer los endpoints, las garantías de concurrencia y las verificaciones realizadas. La rama acumulativa de este desarrollo es `features/citas`; no se ha integrado en `main`.
 
+La [revisión técnica del backend](MindSet/documentos/Cierre_backend.md) detalla RF-01 a RF-19, reglas de negocio y 38 pruebas unitarias aprobadas. El [procedimiento de administrador de desarrollo](MindSet/documentos/Administrador_desarrollo.md) permite preparar una cuenta elegida por el operador, con simulación por defecto y sin credenciales fijas. Profesionales verifica la vigencia de las cuentas mediante un contrato interno de Usuarios; configurar `INTERNAL_API_KEY` en Usuarios, Profesionales y Citas antes de usar ese flujo.
+
 ## Autor
 
 **Alexis Carrasco Salgado**  
