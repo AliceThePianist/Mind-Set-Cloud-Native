@@ -10,6 +10,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.authentication.BadCredentialsException;
 
 import java.util.List;
+import java.util.Locale;
 import java.util.NoSuchElementException;
 
 @Service
@@ -37,17 +38,18 @@ public class UsuarioService {
 
         validarDatos(usuario);
 
-        String correo = usuario.getCorreo().trim().toLowerCase();
+        String correo = usuario.getCorreo().trim().toLowerCase(Locale.ROOT);
 
         if (usuarioRepository.findByCorreo(correo) != null) {
             throw new IllegalStateException("El correo ya está registrado");
         }
 
-        usuario.setCorreo(correo);
-        usuario.setContrasena(codificador.encode(usuario.getContrasena()));
-        usuario.setRol(rol);
-
-        return usuarioRepository.save(usuario);
+        // Nunca persistir la entidad recibida: podría contener un ID enviado por el cliente.
+        Usuario nuevo = new Usuario();
+        nuevo.setCorreo(correo);
+        nuevo.setContrasena(codificador.encode(usuario.getContrasena()));
+        nuevo.setRol(rol);
+        return usuarioRepository.save(nuevo);
     }
 
     public String iniciarSesion(String correo, String contrasena) {
@@ -57,7 +59,7 @@ public class UsuarioService {
             throw new BadCredentialsException("Credenciales incorrectas");
         }
 
-        String correoNormalizado = correo.trim().toLowerCase();
+        String correoNormalizado = correo.trim().toLowerCase(Locale.ROOT);
 
         Usuario usuario = usuarioRepository.findByCorreo(correoNormalizado);
 
@@ -74,6 +76,11 @@ public class UsuarioService {
 
     public List<Usuario> listarUsuarios() {
         return usuarioRepository.findAll();
+    }
+
+    public boolean esProfesionalVigente(Long id) {
+        return usuarioRepository.findById(id)
+                .map(usuario -> "PROFESIONAL".equals(usuario.getRol())).orElse(false);
     }
 
     public Usuario buscarPorId(Long id) {
@@ -106,7 +113,7 @@ public class UsuarioService {
 
         validarDatos(datos);
 
-        String correo = datos.getCorreo().trim().toLowerCase();
+        String correo = datos.getCorreo().trim().toLowerCase(Locale.ROOT);
         Usuario existente = usuarioRepository.findByCorreo(correo);
 
         if (existente != null && !existente.getId().equals(id)) {

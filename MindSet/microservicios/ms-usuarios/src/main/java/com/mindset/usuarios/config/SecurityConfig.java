@@ -2,6 +2,7 @@
 package com.mindset.usuarios.config;
 
 import com.mindset.usuarios.security.JwtFilter;
+import com.mindset.usuarios.security.ServicioInternoFilter;
 
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
@@ -22,7 +23,7 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(
             HttpSecurity http,
-            JwtFilter jwtFilter) throws Exception {
+            JwtFilter jwtFilter, ServicioInternoFilter interno) throws Exception {
 
         http
                 .csrf(csrf -> csrf.disable())
@@ -32,6 +33,8 @@ public class SecurityConfig {
                 )
 
                 .authorizeHttpRequests(auth -> auth
+                        .requestMatchers(HttpMethod.GET, "/interno/usuarios/{id}/profesional-vigente")
+                        .hasRole("SISTEMA")
                         .requestMatchers(HttpMethod.POST, "/api/usuarios/profesionales")
                         .hasRole("ADMINISTRADOR")
 
@@ -84,9 +87,16 @@ public class SecurityConfig {
                 .addFilterBefore(
                         jwtFilter,
                         UsernamePasswordAuthenticationFilter.class
-                );
+                ).addFilterAfter(interno, JwtFilter.class);
 
         return http.build();
+    }
+
+    @Bean
+    public FilterRegistrationBean<ServicioInternoFilter> registroInterno(ServicioInternoFilter filtro) {
+        FilterRegistrationBean<ServicioInternoFilter> registro = new FilterRegistrationBean<>(filtro);
+        registro.setEnabled(false);
+        return registro;
     }
 
     @Bean
