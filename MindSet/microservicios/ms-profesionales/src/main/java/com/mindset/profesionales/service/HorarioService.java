@@ -44,6 +44,7 @@ public class HorarioService {
         horarios.delete(propioDisponible(usuarioId, id));
     }
     private Profesional bloquearProfesional(Long usuarioId) {
+        perfiles.verificarCuenta(usuarioId);
         // Todas las escrituras de la agenda y las reservas toman el mismo bloqueo.
         return profesionales.bloquearPorId(usuarioId)
                 .orElseThrow(() -> new NoSuchElementException("Perfil no encontrado"));

@@ -1,5 +1,9 @@
 package com.mindset.profesionales.model;
 import jakarta.persistence.*;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 @Entity
 @Table(name = "profesionales")
@@ -16,7 +20,12 @@ public class Profesional {
     private String descripcion;
     @Column(nullable = false)
     private boolean activo;
+    // Lado inverso: Horario.profesional mantiene la FK. No borrar agendas al modificar perfiles.
+    @OneToMany(mappedBy = "profesional", fetch = FetchType.LAZY)
+    private List<Horario> horarios = new ArrayList<>();
     public Profesional() {}
+    @JsonIgnore
+    public List<Horario> getHorarios() { return Collections.unmodifiableList(horarios); }
     public Long getUsuarioId() { return usuarioId; }
     public void setUsuarioId(Long usuarioId) { this.usuarioId = usuarioId; }
     public String getNombre() { return nombre; }

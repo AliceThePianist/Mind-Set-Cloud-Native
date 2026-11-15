@@ -33,7 +33,7 @@ public class ReservaService {
         Instant desde = datos.desde().isAfter(Instant.now()) ? datos.desde() : Instant.now();
         for (Long profesionalId : horarios.candidatos(desde, datos.hasta())) {
             Profesional perfil = profesionales.bloquearPorId(profesionalId).orElse(null);
-            if (perfil == null || !perfil.isActivo() || !perfiles.completo(perfil)) continue;
+            if (perfil == null || !perfiles.publicable(perfil)) continue;
             // Se consulta después del bloqueo para observar las reservas ya confirmadas.
             var disponibles = horarios.findByProfesionalUsuarioIdAndSolicitudIdIsNullAndInicioGreaterThanEqualAndFinLessThanEqualOrderByInicioAsc(
                     profesionalId, desde, datos.hasta());
